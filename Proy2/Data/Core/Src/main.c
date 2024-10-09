@@ -68,6 +68,7 @@ int inicio = 0;
 int loser1 = 0;
 int loser2 = 0;
 int win = 0;
+int pintjueg = 0; //Pintar una ves pantalla juego
 
 int rect_x = 90, rect_y = 60;
 int rect_width = 20, rect_height = 20;
@@ -143,8 +144,6 @@ int check_collision(int jug_x, int jug_y, int green_x, int green_y) {
             jug_y < green_y + green_rect_height &&
             jug_y + jug_height > green_y);
 }
-
-
 
 void move_green_cube_left() {
     // Limpiar el cubo verde actual
@@ -263,70 +262,7 @@ int main(void)
 	FillRect(50, 60, 20, 20, 0xF800);
 	FillRect(70, 60, 20, 20, 0x07E0);*/
 	//LCD_Bitmap(0, 0, 320, 240, FONDOINICIO);
-	LCD_Clear(0xEDCC);
 
-
-	/*fres = f_mount(&fs, "/", 0);
-	if(fres == FR_OK){
-		LCD_Print("Micro SD card is mounted succesfully!", 20, 50, 1, 0x001F, 0xCAB9);
-	}else if(fres != FR_OK){
-		LCD_Print("Micro SD card's mount error!", 20, 100, 1, 0x001F, 0xCAB9);
-	}
-	fres = f_open(&fil, "DIVISION.txt", FA_READ);
-	if(fres == FR_OK){
-		LCD_Print("File opened for reading.", 20, 100, 1, 0x001F, 0xCAB9);
-		leer = 1;
-	}else if(fres != FR_OK){
-		LCD_Print("File was not opened for reading!", 30, 100, 1, 0x001F, 0xCAB9);
-		leer = 0;
-	}
-	if (leer == 1){
-		while(f_gets(buffer, sizeof(buffer), &fil)){
-		}
-		leer = 0;
-	}
-
-	fres = f_close(&fil);
-	if(fres == FR_OK){
-		LCD_Print("The file is closed", 30, 150, 1, 0x001F, 0xCAB9);
-	}else if(fres != FR_OK){
-		LCD_Print("The file was not closed", 30, 150, 1, 0x001F, 0xCAB9);
-	}
-
-	f_mount(NULL,"",1);*/
-
-	//División de carriles
-	LCD_Bitmap(0, 120, 120,19, DIVISION);
-	LCD_Bitmap(125, 120, 120,19, DIVISION);
-	LCD_Bitmap(200, 120, 120,19, DIVISION);
-	/*LCD_Bitmap(0, 120, 120,19, buffer);
-	LCD_Bitmap(125, 120, 120,19, buffer);
-	LCD_Bitmap(200, 120, 120,19, buffer);
-
-	memset(buffer, '\0', 4500); //Limpia el buffer*/
-
-	LCD_Bitmap(0, 220, 80,18, DIVISIONBAJA);
-	LCD_Bitmap(80, 220, 80,18, DIVISIONBAJA);
-	LCD_Bitmap(160, 220, 80,18, DIVISIONBAJA);
-	LCD_Bitmap(240, 220, 80,18, DIVISIONBAJA);
-
-
-
-	//Público
-	LCD_Bitmap(0, 0,320, 45 , TRACK);
-
-
-	LCD_Bitmap(0, 0, 32, 31, Jug1);
-	FillRect(33, 0, 20, 20, 0xF800); //Vidas Jug1
-	FillRect(53, 0, 20, 20, 0xF800);
-	FillRect(73, 0, 20, 20, 0xF800);
-	FillRect(93, 0, 20, 20, 0xF800);
-
-	LCD_Bitmap(0, 210, 32, 31, Jug2);
-	FillRect(33, 220, 20, 20, 0x001F); //Vidas Jug2
-	FillRect(53, 220, 20, 20, 0x001F);
-	FillRect(73, 220, 20, 20, 0x001F);
-	FillRect(93, 220, 20, 20, 0x001F);
 
 
 	//LCD_Sprite(sprite_x, sprite_y, sprite_width, sprite_height, movjug1, 2, anima1, 0, 1);
@@ -340,97 +276,167 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-		uint32_t current_time = HAL_GetTick();
-		int random_number = (rand() % 5) + 1;//Numeros random del 1 al 5
-		/*for(int x = 0; x < 320 -32; x++){
-			HAL_Delay(15);
-			int anima = (x/35)%3;
-			LCD_Sprite(0, 200, 31, 32, colijug1, 3, anima, 0, 1);
-		}*/
-		/*for(int c = 0; c < 320 -32; c++){
-			HAL_Delay(15);
-			int anima1 = (c/2)%2;
-			LCD_Sprite(0, 200, 29, 41, movjug1, 2, anima1, 0, 1);
-		}*/
-		if (random_number == 1  && cactus != 1) { //&& move1 != 1
-		      if (current_time - last_time_cactus >= 15) { // Controla la velocidad del cactus
-		        last_time_cactus = current_time;
+		switch (inicio){
+			case 0:
+				LCD_Clear(0xEDCC);
+				if(pintjueg == 1){
+					/*fres = f_mount(&fs, "/", 0);
+					if(fres == FR_OK){
+						LCD_Print("Micro SD card is mounted succesfully!", 20, 50, 1, 0x001F, 0xCAB9);
+					}else if(fres != FR_OK){
+						LCD_Print("Micro SD card's mount error!", 20, 100, 1, 0x001F, 0xCAB9);
+					}
+					fres = f_open(&fil, "DIVISION.txt", FA_READ);
+					if(fres == FR_OK){
+						LCD_Print("File opened for reading.", 20, 100, 1, 0x001F, 0xCAB9);
+						leer = 1;
+					}else if(fres != FR_OK){
+						LCD_Print("File was not opened for reading!", 30, 100, 1, 0x001F, 0xCAB9);
+						leer = 0;
+					}
+					if (leer == 1){
+						while(f_gets(buffer, sizeof(buffer), &fil)){
+						}
+						leer = 0;
+					}
+					fres = f_close(&fil);
+					if(fres == FR_OK){
+						LCD_Print("The file is closed", 30, 150, 1, 0x001F, 0xCAB9);
+					}else if(fres != FR_OK){
+						LCD_Print("The file was not closed", 30, 150, 1, 0x001F, 0xCAB9);
+					}
+					f_mount(NULL,"",1);*/
+					//División de carriles
+					LCD_Bitmap(0, 120, 120,19, DIVISION);
+					LCD_Bitmap(125, 120, 120,19, DIVISION);
+					LCD_Bitmap(200, 120, 120,19, DIVISION);
+					/*LCD_Bitmap(0, 120, 120,19, buffer);
+					LCD_Bitmap(125, 120, 120,19, buffer);
+					LCD_Bitmap(200, 120, 120,19, buffer);
+					memset(buffer, '\0', 4500); //Limpia el buffer*/
+					LCD_Bitmap(0, 220, 80,18, DIVISIONBAJA);
+					LCD_Bitmap(80, 220, 80,18, DIVISIONBAJA);
+					LCD_Bitmap(160, 220, 80,18, DIVISIONBAJA);
+					LCD_Bitmap(240, 220, 80,18, DIVISIONBAJA);
+					//Público
+					LCD_Bitmap(0, 0,320, 45 , TRACK);
 
-		        // Mover cactus hacia la izquierda
-		        z--; // Decrementa la posición del cactus
-		        int anima = (z / 50) % 1;
-		        //LCD_Sprite(z, 150, 20, 25, CACTUS, 1, anima1, 0, 1);
-		        FillRect(z, 150, 20, 20, 0xF800);
-		        if (check_collision(sprite_x, sprite_y, z, 150)) {
-		        	colision++;
-		            // Borrar el cactus cuando hay colisión
-		            FillRect(z, 150, 20, 25, 0xEDCC); // Rellenar con color de fondo
-		            cactus = 1;
-		       }
+					LCD_Bitmap(0, 0, 32, 31, Jug1);
+					FillRect(33, 0, 20, 20, 0xF800); //Vidas Jug1
+					FillRect(53, 0, 20, 20, 0xF800);
+					FillRect(73, 0, 20, 20, 0xF800);
+					FillRect(93, 0, 20, 20, 0xF800);
 
-		                // Si el cactus llega al límite, reiniciar su posición
-		        if (z <= 10) {
-		        	z = 300;  // Reiniciar la posición del cactus
-		        }
-		        // Si el cactus llega al límite, reiniciar su posición
-		        if (z <= 10) {
-		          FillRect(z, 150, 20, 25, 0xEDCC); // Reiniciar la posición del cactus
-		          z = 300;
-		        }
-		      }
-		    }
+					LCD_Bitmap(0, 210, 32, 31, Jug2);
+					FillRect(33, 220, 20, 20, 0x001F); //Vidas Jug2
+					FillRect(53, 220, 20, 20, 0x001F);
+					FillRect(73, 220, 20, 20, 0x001F);
+					FillRect(93, 220, 20, 20, 0x001F);
+					pintjueg = 0;
+				}
+				uint32_t current_time = HAL_GetTick();
+				int random_number = (rand() % 5) + 1;//Numeros random del 1 al 5
+				/*for(int x = 0; x < 320 -32; x++){
+					HAL_Delay(15);
+					int anima = (x/35)%3;
+					LCD_Sprite(0, 200, 31, 32, colijug1, 3, anima, 0, 1);
+				}*/
+				/*for(int c = 0; c < 320 -32; c++){
+					HAL_Delay(15);
+					int anima1 = (c/2)%2;
+					LCD_Sprite(0, 200, 29, 41, movjug1, 2, anima1, 0, 1);
+				}*/
+				if (random_number == 1  && cactus != 1) {//&& move1 != 1
+					if (current_time - last_time_cactus >= 15) { // Controla la velocidad del cactus
+						last_time_cactus = current_time;
+						// Mover cactus hacia la izquierda
+						z--; // Decrementa la posición del cactus
+						int anima = (z / 50) % 1;
+						//LCD_Sprite(z, 150, 20, 25, CACTUS, 1, anima1, 0, 1);
+						FillRect(z, 150, 20, 20, 0xF800);
+						if (check_collision(sprite_x, sprite_y, z, 150)) {
+							colision++;
+							// Borrar el cactus cuando hay colisión
+						    FillRect(z, 150, 20, 25, 0xEDCC); // Rellenar con color de fondo
+						    cactus = 1;
+						}
+						// Si el cactus llega al límite, reiniciar su posición
+						if (z <= 10) {
+							z = 300;  // Reiniciar la posición del cactus
+						}
+						// Si el cactus llega al límite, reiniciar su posición
+						if (z <= 10) {
+							FillRect(z, 150, 20, 25, 0xEDCC); // Reiniciar la posición del cactus
+						    z = 300;
+						}
+					}
+				}
+				if(colision == 1){
+					FillRect(93, 0, 20, 20, 0xFFFF);
+				}else if(colision == 2){
+					FillRect(73, 0, 20, 20, 0xFFFF);
+				}else if(colision == 3){
+					FillRect(53, 0, 20, 20, 0xFFFF);
+				}else if(colision == 4){
+					FillRect(33, 0, 20, 20, 0xFFFF);
+					loser1 = 1;
+				}
+				if(loser1 == 1){
+					LCD_Print("Perdiste! JUG1 :(", 20, 100, 1, 0x001F, 0xCAB9);
+				}
+				if (received_char == 'g') {
+					//move_blue_cube_up();  // Mover cubo azul hacia arriba
+					//move_jug1_up();
+					move_sprite_up();
+					received_char = 0;  // Resetear el comando
+					move1 = 0;
+				}
+				if (received_char == 'h') {
+					//move_blue_cube_down();  // Mover cubo azul hacia abajo
+					//move_jug1_down();
+					move_sprite_down();
+					received_char = 0;  // Resetear el comando
+					move1 = 0;
+				}
+				if (received_char == 'e') {
+					//move_green_cube_left();  // Mover cubo verde hacia la izquierda
+					received_char = 0;  // Resetear el comando
+					move1 = 0;
+				}
+				if(received_char == 'f'){
+					//move_green_cube_right();
+					received_char = 0;
+					move1 = 0;
+				}
+				/*if(move1 != 1){
+					c++;
+					anima1 = (c / 2) % 2;
+					LCD_Sprite(sprite_x, sprite_y, sprite_width, sprite_height, movjug1, 2, anima1, 0, 1);
+				}
+				if(c == 20){
+					c = 0;
+				}*/
+				break;
+			case 1:
 
-
-		if(colision == 1){
-			FillRect(93, 0, 20, 20, 0xFFFF);
-		}else if(colision == 2){
-			FillRect(73, 0, 20, 20, 0xFFFF);
-		}else if(colision == 3){
-			FillRect(53, 0, 20, 20, 0xFFFF);
-		}else if(colision == 4){
-			FillRect(33, 0, 20, 20, 0xFFFF);
-			loser1 = 1;
+				break;
+			case 2:
+				break;
 		}
 
-		if(loser1 == 1){
-			LCD_Print("Perdiste! JUG1 :(", 20, 100, 1, 0x001F, 0xCAB9);
-		}
-		if (received_char == 'g') {
-		    //move_blue_cube_up();  // Mover cubo azul hacia arriba
-		    //move_jug1_up();
-			move_sprite_up();
-		    received_char = 0;  // Resetear el comando
-		    move1 = 0;
-		}
 
 
-		if (received_char == 'h') {
-		    //move_blue_cube_down();  // Mover cubo azul hacia abajo
-			//move_jug1_down();
-			move_sprite_down();
-		    received_char = 0;  // Resetear el comando
-		    move1 = 0;
-		}
-		if (received_char == 'e') {
-		    //move_green_cube_left();  // Mover cubo verde hacia la izquierda
-		    received_char = 0;  // Resetear el comando
-		    move1 = 0;
-		}
-		if(received_char == 'f'){
-			//move_green_cube_right();
-			received_char = 0;
-			move1 = 0;
-		}
 
-		/*if(move1 != 1){
-			c++;
-			anima1 = (c / 2) % 2;
-			LCD_Sprite(sprite_x, sprite_y, sprite_width, sprite_height, movjug1, 2, anima1, 0, 1);
 
-		}
-		if(c == 20){
-			c = 0;
-		}*/
+
+
+
+
+
+
+
+
+
 
     /* USER CODE END WHILE */
 
