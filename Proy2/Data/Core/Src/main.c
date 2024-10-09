@@ -57,6 +57,13 @@ UART_HandleTypeDef huart3;
 extern DIVISIONBAJA [];
 extern DIVISION [];
 extern TRACK [];
+
+extern LOGOEX [];
+extern OPCION1[];
+extern OPCION2 [];
+extern OPCION3 [];
+extern PUNTERO [];
+
 extern uint8_t Jug2 [];
 extern uint8_t Jug1 [];
 extern uint8_t colijug1 [];
@@ -64,11 +71,12 @@ extern uint8_t movjug1 [];
 extern uint8_t CACTUS[];
 
 uint8_t data[];
-int inicio = 0;
+int inicio = 3;
 int loser1 = 0;
 int loser2 = 0;
 int win = 0;
 int pintjueg = 0; //Pintar una ves pantalla juego
+uint8_t opcion = 5;
 
 int rect_x = 90, rect_y = 60;
 int rect_width = 20, rect_height = 20;
@@ -115,6 +123,18 @@ int move1 = 0; //Bandera de movimiento sprite
 // Variable para mostrar en pantalla
 char Pant[20];
 
+// Definir coordenadas Y para las opciones
+int OPCION1_Y = 130;
+int OPCION2_Y = 162;
+int OPCION3_Y = 195;
+
+// Definir tamaño y posición del puntero
+int PUNTERO_X = 80;
+int PUNTERO_ANCHO = 14;
+int PUNTERO_ALTO = 15;
+
+uint8_t seleccion_actual = 1;
+
 //SD control
 FATFS fs;
 FATFS *pfs;
@@ -138,6 +158,47 @@ static void MX_USART3_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+// Función para borrar el puntero de la pantalla
+void borrar_puntero() {
+    FillRect(PUNTERO_X, OPCION1_Y, PUNTERO_ANCHO, PUNTERO_ALTO, 0x001F); // Borra puntero en Opción 1
+    FillRect(PUNTERO_X, OPCION2_Y, PUNTERO_ANCHO, PUNTERO_ALTO, 0x001F); // Borra puntero en Opción 2
+    FillRect(PUNTERO_X, OPCION3_Y, PUNTERO_ANCHO, PUNTERO_ALTO, 0x001F); // Borra puntero en Opción 3
+}
+
+// Función para dibujar el puntero en la opción seleccionada
+void dibujar_puntero(uint8_t opcion) {
+
+    if(opcion == 1){
+    	LCD_Bitmap(PUNTERO_X, OPCION1_Y, PUNTERO_ANCHO, PUNTERO_ALTO, PUNTERO);
+    }else if(opcion == 2){
+    	LCD_Bitmap(PUNTERO_X, OPCION2_Y, PUNTERO_ANCHO, PUNTERO_ALTO, PUNTERO);
+    }else if(opcion == 3){
+    	LCD_Bitmap(PUNTERO_X, OPCION3_Y, PUNTERO_ANCHO, PUNTERO_ALTO, PUNTERO);
+    }
+}
+
+// Función para mover el puntero según el comando recibido
+void mover_puntero(char comando) {
+    // Borrar el puntero actual
+    borrar_puntero();
+
+    // Mover el puntero hacia arriba ('g') o hacia abajo ('h')
+    if (received_char == 'g') {
+        if (seleccion_actual > 1) {
+            seleccion_actual--; // Mover hacia arriba
+        }
+    } else if (received_char == 'h') {
+        if (seleccion_actual < 3) {
+            seleccion_actual++; // Mover hacia abajo
+        }
+    }
+
+
+    // Dibujar el puntero en la nueva posición
+    dibujar_puntero(seleccion_actual);
+}
+
 int check_collision(int jug_x, int jug_y, int green_x, int green_y) {
     return (jug_x < green_x + green_rect_width &&
             jug_x + jug_width > green_x &&
@@ -263,7 +324,12 @@ int main(void)
 	FillRect(70, 60, 20, 20, 0x07E0);*/
 	//LCD_Bitmap(0, 0, 320, 240, FONDOINICIO);
 
-
+	LCD_Clear(0x2817);
+	LCD_Bitmap(53, 25, 214, 85, LOGOEX);
+	LCD_Bitmap(110, 130, 98, 12, OPCION1);
+	LCD_Bitmap(110, 162, 142, 13, OPCION2);
+	LCD_Bitmap(110, 195, 84, 11, OPCION3);
+	LCD_Bitmap(80, 130, 14, 15, PUNTERO);
 
 	//LCD_Sprite(sprite_x, sprite_y, sprite_width, sprite_height, movjug1, 2, anima1, 0, 1);
 
@@ -276,6 +342,14 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
+		if(inicio == 3){
+			mover_puntero(received_char);
+		}
+		if(received_char == 'a' && opcion == 1){
+			inicio = 0;
+			pintjueg = 1;
+		}
+
 		switch (inicio){
 			case 0:
 				LCD_Clear(0xEDCC);
