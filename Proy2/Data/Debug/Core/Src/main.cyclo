@@ -1,0 +1,14 @@
+../Core/Src/main.c:140:5:check_collision	5
+../Core/Src/main.c:149:6:move_green_cube_left	1
+../Core/Src/main.c:160:6:move_green_cube_right	1
+../Core/Src/main.c:171:6:clear_previous_sprite	1
+../Core/Src/main.c:176:6:move_sprite_up	3
+../Core/Src/main.c:198:6:move_sprite_down	3
+../Core/Src/main.c:227:5:main	16
+../Core/Src/main.c:446:6:SystemClock_Config	3
+../Core/Src/main.c:494:13:MX_SPI1_Init	2
+../Core/Src/main.c:532:13:MX_USART3_UART_Init	2
+../Core/Src/main.c:563:13:MX_DMA_Init	1
+../Core/Src/main.c:581:13:MX_GPIO_Init	1
+../Core/Src/main.c:644:6:HAL_UART_RxCpltCallback	1
+../Core/Src/main.c:657:6:Error_Handler	1
