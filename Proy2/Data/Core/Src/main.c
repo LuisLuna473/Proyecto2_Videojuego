@@ -143,6 +143,7 @@ FRESULT fres;
 DWORD fre_clust;
 uint32_t totalSpace, freeSpace;
 char buffer[4500];
+unsigned char buffer[4500];
 uint8_t leer;
 /* USER CODE END PV */
 
@@ -159,45 +160,45 @@ static void MX_USART3_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-// Función para borrar el puntero de la pantalla
-void borrar_puntero() {
-    FillRect(PUNTERO_X, OPCION1_Y, PUNTERO_ANCHO, PUNTERO_ALTO, 0x001F); // Borra puntero en Opción 1
-    FillRect(PUNTERO_X, OPCION2_Y, PUNTERO_ANCHO, PUNTERO_ALTO, 0x001F); // Borra puntero en Opción 2
-    FillRect(PUNTERO_X, OPCION3_Y, PUNTERO_ANCHO, PUNTERO_ALTO, 0x001F); // Borra puntero en Opción 3
+void dibujar_puntero(uint8_t y_coord) {
+    // Esta función dibuja el puntero en la posición `y_coord` en la pantalla.
+    LCD_Bitmap(80, y_coord, 14, 15, PUNTERO);  // Dibuja el puntero en la nueva coordenada Y
 }
 
-// Función para dibujar el puntero en la opción seleccionada
-void dibujar_puntero(uint8_t opcion) {
+void borrar_puntero(uint8_t y_coord) {
+    // Esta función borra el puntero en la posición `y_coord` de la pantalla.
+    // Aquí deberías usar un bitmap vacío o redibujar la parte de la pantalla sin el puntero.
+    FillRect(80, y_coord, 14, 15, 0x2817);  // Borra el puntero en la coordenada Y
+}
 
-    if(opcion == 1){
-    	LCD_Bitmap(PUNTERO_X, OPCION1_Y, PUNTERO_ANCHO, PUNTERO_ALTO, PUNTERO);
-    }else if(opcion == 2){
-    	LCD_Bitmap(PUNTERO_X, OPCION2_Y, PUNTERO_ANCHO, PUNTERO_ALTO, PUNTERO);
-    }else if(opcion == 3){
-    	LCD_Bitmap(PUNTERO_X, OPCION3_Y, PUNTERO_ANCHO, PUNTERO_ALTO, PUNTERO);
+// Función para mover el puntero hacia arriba
+void mover_puntero_arriba(void) {
+    if (seleccion_actual > 1) {
+        // Borrar puntero en la posición actual
+        borrar_puntero(seleccion_actual == 2 ? OPCION2_Y : OPCION3_Y);
+
+        // Cambiar a la opción anterior
+        seleccion_actual--;
+
+        // Dibujar el puntero en la nueva posición
+        dibujar_puntero(seleccion_actual == 1 ? OPCION1_Y : OPCION2_Y);
     }
 }
 
-// Función para mover el puntero según el comando recibido
-void mover_puntero(char comando) {
-    // Borrar el puntero actual
-    borrar_puntero();
+// Función para mover el puntero hacia abajo
+void mover_puntero_abajo(void) {
+    if (seleccion_actual < 3) {
+        // Borrar puntero en la posición actual
+        borrar_puntero(seleccion_actual == 1 ? OPCION1_Y : OPCION2_Y);
 
-    // Mover el puntero hacia arriba ('g') o hacia abajo ('h')
-    if (received_char == 'g') {
-        if (seleccion_actual > 1) {
-            seleccion_actual--; // Mover hacia arriba
-        }
-    } else if (received_char == 'h') {
-        if (seleccion_actual < 3) {
-            seleccion_actual++; // Mover hacia abajo
-        }
+        // Cambiar a la siguiente opción
+        seleccion_actual++;
+
+        // Dibujar el puntero en la nueva posición
+        dibujar_puntero(seleccion_actual == 2 ? OPCION2_Y : OPCION3_Y);
     }
-
-
-    // Dibujar el puntero en la nueva posición
-    dibujar_puntero(seleccion_actual);
 }
+
 
 int check_collision(int jug_x, int jug_y, int green_x, int green_y) {
     return (jug_x < green_x + green_rect_width &&
@@ -342,18 +343,29 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-		if(inicio == 3){
-			mover_puntero(received_char);
+		if(inicio == 3 && received_char != new_command){ //
+			//HAL_Delay(200);
+			if(received_char == 'd'){
+				mover_puntero_arriba();
+			}
+			else if(received_char == 'c'){
+				mover_puntero_abajo();
+			}
+
+			new_command == received_char;
 		}
-		if(received_char == 'a' && opcion == 1){
+
+		if(received_char == 'a' && seleccion_actual == 1){
 			inicio = 0;
+			seleccion_actual = 0;
 			pintjueg = 1;
 		}
 
 		switch (inicio){
 			case 0:
-				LCD_Clear(0xEDCC);
+
 				if(pintjueg == 1){
+					LCD_Clear(0xEDCC);
 					/*fres = f_mount(&fs, "/", 0);
 					if(fres == FR_OK){
 						LCD_Print("Micro SD card is mounted succesfully!", 20, 50, 1, 0x001F, 0xCAB9);
@@ -379,15 +391,19 @@ int main(void)
 					}else if(fres != FR_OK){
 						LCD_Print("The file was not closed", 30, 150, 1, 0x001F, 0xCAB9);
 					}
-					f_mount(NULL,"",1);*/
+					f_mount(NULL,"",1);
+
+					LCD_Bitmap(0, 120, 120,19, buffer);
+					LCD_Bitmap(125, 120, 120,19, buffer);
+					LCD_Bitmap(200, 120, 120,19, buffer);
+					memset(buffer, '\0', 4500); //Limpia el buffer*/
+
 					//División de carriles
 					LCD_Bitmap(0, 120, 120,19, DIVISION);
 					LCD_Bitmap(125, 120, 120,19, DIVISION);
 					LCD_Bitmap(200, 120, 120,19, DIVISION);
-					/*LCD_Bitmap(0, 120, 120,19, buffer);
-					LCD_Bitmap(125, 120, 120,19, buffer);
-					LCD_Bitmap(200, 120, 120,19, buffer);
-					memset(buffer, '\0', 4500); //Limpia el buffer*/
+
+
 					LCD_Bitmap(0, 220, 80,18, DIVISIONBAJA);
 					LCD_Bitmap(80, 220, 80,18, DIVISIONBAJA);
 					LCD_Bitmap(160, 220, 80,18, DIVISIONBAJA);
@@ -423,6 +439,7 @@ int main(void)
 				if (random_number == 1  && cactus != 1) {//&& move1 != 1
 					if (current_time - last_time_cactus >= 15) { // Controla la velocidad del cactus
 						last_time_cactus = current_time;
+						clear_previous_sprite(z, 150, 20, 20);
 						// Mover cactus hacia la izquierda
 						z--; // Decrementa la posición del cactus
 						int anima = (z / 50) % 1;
