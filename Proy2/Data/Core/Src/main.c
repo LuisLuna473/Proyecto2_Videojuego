@@ -142,7 +142,6 @@ FIL fil;
 FRESULT fres;
 DWORD fre_clust;
 uint32_t totalSpace, freeSpace;
-char buffer[4500];
 unsigned char buffer[4500];
 uint8_t leer;
 /* USER CODE END PV */
