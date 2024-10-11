@@ -51,6 +51,8 @@ SPI_HandleTypeDef hspi1;
 DMA_HandleTypeDef hdma_spi1_rx;
 
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart3_rx;
+DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
 //extern uint8_t FONDOINICIO[];
@@ -70,6 +72,7 @@ extern uint8_t colijug1 [];
 extern uint8_t movjug1 [];
 extern uint8_t CACTUS[];
 
+uint8_t musica[]; //Buffer para la musica vía DMA envio
 uint8_t data[];
 int inicio = 3;
 int loser1 = 0;
@@ -111,7 +114,8 @@ int y_pos = 200; // Posición inicial del personaje en el eje Y
 int anima1 = 0; // Para controlar el índice de animación
 
 int cactus = 0;
-// Límites para el movimiento vertical Jug1
+
+int boom1 = 0;
 
 
 const int sprite_width = 30;  // Ancho del sprite
@@ -314,7 +318,10 @@ int main(void)
   MX_USART3_UART_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-    HAL_UART_Receive_IT(&huart3, data, 1);
+  	//HAL_UART_Transmit_DMA(&huart3, musica, sizeof(musica)); //Envia los datos del buffer musica via RX en DMA
+    HAL_UART_Receive_DMA(&huart3, data, 1); //Recibir comandos via uart en DMA
+
+  	//HAL_UART_Receive_IT(&huart3, data, 1);
 	LCD_Init();
 
 	LCD_Clear(0x00);
@@ -447,6 +454,7 @@ int main(void)
 						if (check_collision(sprite_x, sprite_y, z, 150)) {
 							colision++;
 							// Borrar el cactus cuando hay colisión
+							z = 300;
 						    FillRect(z, 150, 20, 25, 0xEDCC); // Rellenar con color de fondo
 						    cactus = 1;
 						}
@@ -462,6 +470,18 @@ int main(void)
 					}
 				}
 				if(colision == 1){
+					boom1 = 1;
+					if(boom1 == 1){
+						int x = 0;
+						x++;
+						int anima = (x/32)%3;
+						LCD_Sprite(sprite_x, sprite_y, 31, 32, colijug1, 3, anima, 0, 1);
+						if (x >= 320 - 32) {
+							x = 0; // Restablece x para futuras ejecuciones
+						}
+						boom1 = 0;
+					}
+					LCD_Bitmap(sprite_x, sprite_y, sprite_width, sprite_height, Jug1);
 					FillRect(93, 0, 20, 20, 0xFFFF);
 				}else if(colision == 2){
 					FillRect(73, 0, 20, 20, 0xFFFF);
@@ -640,7 +660,7 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;
-  huart3.Init.Mode = UART_MODE_RX;
+  huart3.Init.Mode = UART_MODE_TX_RX;
   huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart3) != HAL_OK)
@@ -661,8 +681,15 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
+  /* DMA1_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
   /* DMA2_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
@@ -741,7 +768,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	received_char = data[0];
 	move1 = 1;
-	HAL_UART_Receive_IT(&huart3, data, 1);
+	//HAL_UART_Receive_IT(&huart3, data, 1);
+	HAL_UART_Receive_DMA(&huart3, data, 1);
 
 }
 /* USER CODE END 4 */
