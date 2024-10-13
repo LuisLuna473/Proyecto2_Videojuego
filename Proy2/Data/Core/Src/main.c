@@ -70,11 +70,36 @@ extern uint8_t Jug2 [];
 extern uint8_t Jug1 [];
 extern uint8_t colijug1 [];
 extern uint8_t movjug1 [];
+extern uint8_t movjug2 [];
+extern uint8_t movjug3 [];
+extern uint8_t movjug4 [];
+extern uint8_t colisionjug1 [];
+extern uint8_t colisionjug2 [];
+extern uint8_t colisionjug3 [];
+extern uint8_t colisionjug4 [];
+extern uint8_t derrapejug1 [];
+extern uint8_t derrapejug2 [];
+extern uint8_t derrapejug3 [];
+extern uint8_t derrapejug4 [];
+extern uint8_t SELECTOROFF [];
+extern uint8_t SELECTORONJ1 [];
+extern uint8_t SELECTORONJ2 [];
+extern uint8_t SELECTOROFFJ1[];
+extern uint8_t personaje1 [];
+extern uint8_t personaje2 [];
+extern uint8_t personaje3 [];
+extern uint8_t personaje4 [];
+extern uint8_t AVISOJUGADOR [];
+
 extern uint8_t CACTUS[];
+extern uint8_t PLANTACAR [];
 
 uint8_t musica[]; //Buffer para la musica vía DMA envio
 uint8_t data[];
-int inicio = 3;
+int inicio = 5;
+int start = 0;
+int unico = 1;
+
 int loser1 = 0;
 int loser2 = 0;
 int win = 0;
@@ -247,8 +272,8 @@ void move_sprite_up() {
     }
 
     // Redibujar el sprite en la nueva posición
-    //LCD_Sprite(sprite_x, sprite_y, sprite_width, sprite_height, movjug1, 2, anima1, 0, 1);  // Dibuja el sprite en su nueva posición
-    LCD_Bitmap(sprite_x, sprite_y, sprite_width, sprite_height, Jug1);
+    LCD_Sprite(sprite_x, sprite_y, sprite_width, sprite_height, movjug1, 2, anima1, 0, 1);  // Dibuja el sprite en su nueva posición
+    //LCD_Bitmap(sprite_x, sprite_y, sprite_width, sprite_height, Jug1);
     if (check_collision(sprite_x, sprite_y, z, 150)) { //check_collision(sprite_x, sprite_y, green_rect_x, green_rect_y
         	colision++;
     }
@@ -269,9 +294,9 @@ void move_sprite_down() {
     }
 
     // Redibujar el sprite en la nueva posición
-    //LCD_Sprite(sprite_x, sprite_y, sprite_width, sprite_height, movjug1, 2, anima1, 0, 1);  // Dibuja el sprite en su nueva posición
+    LCD_Sprite(sprite_x, sprite_y, sprite_width, sprite_height, movjug1, 2, anima1, 0, 1);  // Dibuja el sprite en su nueva posición
 
-    LCD_Bitmap(sprite_x, sprite_y, sprite_width, sprite_height, Jug1);
+    //LCD_Bitmap(sprite_x, sprite_y, sprite_width, sprite_height, Jug1);
     if (check_collision(sprite_x, sprite_y, z, 200)) {
     	colision++;
     }
@@ -325,18 +350,14 @@ int main(void)
 	LCD_Init();
 
 	LCD_Clear(0x00);
+	LCD_Print("Presión Start para comenzar", 20, 100, 1, 0x001F, 0xCAB9);
 
 	/*FillRect(0, 0, 319, 239, 0xFFFF);
 	FillRect(50, 60, 20, 20, 0xF800);
 	FillRect(70, 60, 20, 20, 0x07E0);*/
 	//LCD_Bitmap(0, 0, 320, 240, FONDOINICIO);
 
-	LCD_Clear(0x2817);
-	LCD_Bitmap(53, 25, 214, 85, LOGOEX);
-	LCD_Bitmap(110, 130, 98, 12, OPCION1);
-	LCD_Bitmap(110, 162, 142, 13, OPCION2);
-	LCD_Bitmap(110, 195, 84, 11, OPCION3);
-	LCD_Bitmap(80, 130, 14, 15, PUNTERO);
+
 
 	//LCD_Sprite(sprite_x, sprite_y, sprite_width, sprite_height, movjug1, 2, anima1, 0, 1);
 
@@ -349,6 +370,20 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
+		if(received_char == 'i' && unico == 1){
+			start = 1;
+			unico = 0;
+		}
+		if(start == 1){
+			LCD_Clear(0x2817);
+			LCD_Bitmap(53, 25, 214, 85, LOGOEX);
+			LCD_Bitmap(110, 130, 98, 12, OPCION1);
+			LCD_Bitmap(110, 162, 142, 13, OPCION2);
+			LCD_Bitmap(110, 195, 84, 11, OPCION3);
+			LCD_Bitmap(80, 130, 14, 15, PUNTERO);
+			start = 0;
+			inicio = 3;
+		}
 		if(inicio == 3 && received_char != new_command){ //
 			//HAL_Delay(200);
 			if(received_char == 'd'){
@@ -366,36 +401,52 @@ int main(void)
 			seleccion_actual = 0;
 			pintjueg = 1;
 		}
+		if(received_char == 'a' && seleccion_actual == 2){
+			inicio = 1;
+			seleccion_actual = 0;
+			pintjueg = 1;
+		}
+		if(received_char == 'a' && seleccion_actual == 3){
+			inicio = 2;
+			seleccion_actual = 0;
+			pintjueg = 1;
+		}
 
 		switch (inicio){
 			case 0:
 
 				if(pintjueg == 1){
 					LCD_Clear(0xEDCC);
-					/*fres = f_mount(&fs, "/", 0);
+
+					/*unsigned char index = 0;
+					int start_save = 0;
+
+					fres = f_mount(&fs, "/", 0);
 					if(fres == FR_OK){
-						LCD_Print("Micro SD card is mounted succesfully!", 20, 50, 1, 0x001F, 0xCAB9);
+						//LCD_Print("Micro SD card is mounted succesfully!", 20, 50, 1, 0x001F, 0xCAB9);
 					}else if(fres != FR_OK){
-						LCD_Print("Micro SD card's mount error!", 20, 100, 1, 0x001F, 0xCAB9);
+						//LCD_Print("Micro SD card's mount error!", 20, 100, 1, 0x001F, 0xCAB9);
 					}
 					fres = f_open(&fil, "DIVISION.txt", FA_READ);
 					if(fres == FR_OK){
-						LCD_Print("File opened for reading.", 20, 100, 1, 0x001F, 0xCAB9);
+						//LCD_Print("File opened for reading.", 20, 100, 1, 0x001F, 0xCAB9);
 						leer = 1;
 					}else if(fres != FR_OK){
-						LCD_Print("File was not opened for reading!", 30, 100, 1, 0x001F, 0xCAB9);
+						//LCD_Print("File was not opened for reading!", 30, 100, 1, 0x001F, 0xCAB9);
 						leer = 0;
 					}
 					if (leer == 1){
+
 						while(f_gets(buffer, sizeof(buffer), &fil)){
+							//Leer valores iniciando en 0 hasta llegar a , o espacio y luego concatenar todos los datos en el buffer
 						}
 						leer = 0;
 					}
 					fres = f_close(&fil);
 					if(fres == FR_OK){
-						LCD_Print("The file is closed", 30, 150, 1, 0x001F, 0xCAB9);
+						//LCD_Print("The file is closed", 30, 150, 1, 0x001F, 0xCAB9);
 					}else if(fres != FR_OK){
-						LCD_Print("The file was not closed", 30, 150, 1, 0x001F, 0xCAB9);
+						//LCD_Print("The file was not closed", 30, 150, 1, 0x001F, 0xCAB9);
 					}
 					f_mount(NULL,"",1);
 
@@ -443,51 +494,88 @@ int main(void)
 					LCD_Sprite(0, 200, 29, 41, movjug1, 2, anima1, 0, 1);
 				}*/
 				if (random_number == 1  && cactus != 1) {//&& move1 != 1
-					if (current_time - last_time_cactus >= 15) { // Controla la velocidad del cactus
+					if (current_time - last_time_cactus >= 15) { // Controla la velocidad de la planta
 						last_time_cactus = current_time;
-						clear_previous_sprite(z, 150, 20, 20);
+						clear_previous_sprite(z, 150, 20, 20); //Notas usar tamaño de la planta carnivor no 20 20
 						// Mover cactus hacia la izquierda
 						z--; // Decrementa la posición del cactus
 						int anima = (z / 50) % 1;
-						//LCD_Sprite(z, 150, 20, 25, CACTUS, 1, anima1, 0, 1);
+						//LCD_Sprite(z, 150, 20, 25, PLANTACAR, 1, anima1, 0, 1);
 						FillRect(z, 150, 20, 20, 0xF800);
 						if (check_collision(sprite_x, sprite_y, z, 150)) {
 							colision++;
+							boom1 = 1;
 							// Borrar el cactus cuando hay colisión
 							z = 300;
 						    FillRect(z, 150, 20, 25, 0xEDCC); // Rellenar con color de fondo
 						    cactus = 1;
 						}
 						// Si el cactus llega al límite, reiniciar su posición
-						if (z <= 10) {
-							z = 300;  // Reiniciar la posición del cactus
-						}
-						// Si el cactus llega al límite, reiniciar su posición
-						if (z <= 10) {
+						if (z == 0){ //Nota la versión anterior era x <= 10
 							FillRect(z, 150, 20, 25, 0xEDCC); // Reiniciar la posición del cactus
 						    z = 300;
 						}
 					}
 				}
 				if(colision == 1){
-					boom1 = 1;
+
 					if(boom1 == 1){
-						int x = 0;
+						/*int x = 0;
 						x++;
-						int anima = (x/32)%3;
+						int anima = (x/50)%3;
 						LCD_Sprite(sprite_x, sprite_y, 31, 32, colijug1, 3, anima, 0, 1);
 						if (x >= 320 - 32) {
 							x = 0; // Restablece x para futuras ejecuciones
+						}*/
+						for(int x = 0; x < 80; x++){
+							HAL_Delay(15);
+							int anima = (x/35)%3;
+							LCD_Sprite(sprite_x, sprite_y, 31, 32, colisionjug1, 3, anima, 0, 1);
+						}
+						boom1 = 0;
+					}
+					//LCD_Bitmap(sprite_x, sprite_y, sprite_width, sprite_height, Jug1);
+					LCD_Sprite(sprite_x, sprite_y, sprite_width, sprite_height, movjug1, 2, anima1, 0, 1);
+					FillRect(93, 0, 20, 20, 0xFFFF);
+				}else if(colision == 2){
+					if(boom1 == 1){
+						/*int x = 0;
+						x++;
+						int anima = (x/50)%3;
+						LCD_Sprite(sprite_x, sprite_y, 31, 32, colijug1, 3, anima, 0, 1);
+						if (x >= 320 - 32) {
+							x = 0; // Restablece x para futuras ejecuciones
+						}*/
+						for(int x = 0; x < 80; x++){
+							HAL_Delay(15);
+							int anima = (x/35)%3;
+							LCD_Sprite(sprite_x, sprite_y, 31, 32, colisionjug1, 3, anima, 0, 1);
 						}
 						boom1 = 0;
 					}
 					LCD_Bitmap(sprite_x, sprite_y, sprite_width, sprite_height, Jug1);
-					FillRect(93, 0, 20, 20, 0xFFFF);
-				}else if(colision == 2){
 					FillRect(73, 0, 20, 20, 0xFFFF);
 				}else if(colision == 3){
+					if(boom1 == 1){
+						for(int x = 0; x < 80; x++){
+							HAL_Delay(15);
+							int anima = (x/35)%3;
+							LCD_Sprite(sprite_x, sprite_y, 31, 32, colisionjug1, 3, anima, 0, 1);
+						}
+						boom1 = 0;
+					}
+					LCD_Bitmap(sprite_x, sprite_y, sprite_width, sprite_height, Jug1);
 					FillRect(53, 0, 20, 20, 0xFFFF);
 				}else if(colision == 4){
+					if(boom1 == 1){
+						for(int x = 0; x < 80; x++){
+							HAL_Delay(15);
+							int anima = (x/35)%3;
+							LCD_Sprite(sprite_x, sprite_y, 31, 32, colisionjug1, 3, anima, 0, 1);
+						}
+						boom1 = 0;
+					}
+					LCD_Bitmap(sprite_x, sprite_y, sprite_width, sprite_height, Jug1);
 					FillRect(33, 0, 20, 20, 0xFFFF);
 					loser1 = 1;
 				}
@@ -518,19 +606,58 @@ int main(void)
 					received_char = 0;
 					move1 = 0;
 				}
-				/*if(move1 != 1){
+				if(move1 != 1){
 					c++;
 					anima1 = (c / 2) % 2;
 					LCD_Sprite(sprite_x, sprite_y, sprite_width, sprite_height, movjug1, 2, anima1, 0, 1);
 				}
 				if(c == 20){
 					c = 0;
-				}*/
+				}
 				break;
 			case 1:
+				if(pintjueg == 1){
+					LCD_Clear(0x00A7);
+					//             *       *
+					LCD_Bitmap(25, 80, 63, 69, SELECTOROFF);
+					LCD_Bitmap(40, 90, 35, 38, personaje1);
 
+					LCD_Bitmap(95, 80, 63, 69, SELECTOROFF);
+					LCD_Bitmap(110, 90, 35, 38, personaje2);
+
+					LCD_Bitmap(165, 80, 63, 69, SELECTOROFF);
+					LCD_Bitmap(180, 90, 35, 38, personaje3);
+
+					LCD_Bitmap(235, 80, 63, 69, SELECTOROFF);
+					LCD_Bitmap(250, 90, 35, 38, personaje4);
+
+
+					//Añadiendo barra gris del selector del jugador
+					LCD_Bitmap(25, 70, 63, 17, SELECTOROFFJ1);
+					LCD_Bitmap(95, 70, 63, 17, SELECTOROFFJ1);
+					LCD_Bitmap(165, 70, 63, 17, SELECTOROFFJ1);
+					LCD_Bitmap(235, 70, 63, 17, SELECTOROFFJ1);
+
+					//80+69-18 REFERENCIA PERSONAJE 1 (Poner la misma coordenada en x que SELECTOROFF del personaje)
+
+					LCD_Bitmap(25, 70, 63, 17, SELECTORONJ1);
+
+					//80+69-18 REFERENCIA PERSONAJE 4
+					LCD_Bitmap(235, 131, 63, 17, SELECTORONJ2);
+
+					LCD_Bitmap(60, 175, 200, 12, AVISOJUGADOR);
+					pintjueg = 0;
+				}
+				//Implementar lectura boton 'b' regreso a menu , start = 1, logica seria mover selectores JUG1 y JUG2 guardar selecciones para imprimir en juego
 				break;
 			case 2:
+				if(pintjueg == 1){
+					LCD_Clear(0xFFFF);
+					sprintf(Pant, "Colisiones: %d", colision);
+					LCD_Print(Pant, 20, 100, 1, 0x001F, 0xEDCC);
+					pintjueg = 0;
+				}
+
 				break;
 		}
 
@@ -766,11 +893,11 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	received_char = data[0];
-	move1 = 1;
+
 	//HAL_UART_Receive_IT(&huart3, data, 1);
 	HAL_UART_Receive_DMA(&huart3, data, 1);
-
+	received_char = data[0];
+	move1 = 1;
 }
 /* USER CODE END 4 */
 
