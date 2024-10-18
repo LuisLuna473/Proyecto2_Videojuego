@@ -99,7 +99,7 @@ extern uint8_t LOGONINTENDO [];
 
 extern uint8_t ENEMY[];
 extern uint8_t BOOSTER[];
-extern uint8_t PLANTACAR[];
+
 extern uint8_t ICONJ1[];
 extern uint8_t LETRAJ1[];
 extern uint8_t ICONJ2[];
@@ -110,6 +110,7 @@ extern uint8_t GUSANOJ2[];
 extern uint8_t CAMEL[];
 
 extern uint8_t POKEY [];
+extern uint8_t giroPOKEY [];
 
 //Ganadores
 extern uint8_t podio[];
@@ -131,6 +132,8 @@ int loser2 = 0;
 int win = 0;
 int pintjueg = 0; //Pintar una ves pantalla juego
 uint8_t opcion = 5;
+
+int bandera = 1;
 
 //int rect_x = 90, rect_y = 60;
 int rect_width = 20, rect_height = 20;
@@ -182,6 +185,18 @@ int cactus_timer = 0;  // Temporizador simple para el retardo entre pasos
 int c = 0; // Para manejar el contador horizontal
 int m = 0;
 
+int random_number;
+
+//Selectores para mountruos
+int selector1 = 0;
+int selector2 = 0;
+
+int tiempo = 0;
+int tiempo1 = 0;
+int tiempo2 = 0;
+int delay_i;
+int last_time_i = 50;
+
 int y_pos = 200; // Posición inicial del personaje en el eje Y
 int anima1 = 0; // Para controlar el índice de animación
 int anima2 = 0;
@@ -218,7 +233,7 @@ int PUNTERO_X = 80;
 int PUNTERO_ANCHO = 14;
 int PUNTERO_ALTO = 15;
 
-uint8_t seleccion_actual = 1;
+uint8_t seleccion_actual = 0;
 
 //SD control
 FATFS fs;
@@ -513,6 +528,22 @@ void leer_archivo() {
     f_mount(NULL, "", 1);
 }
 
+
+void mostrarMonstruos(uint8_t giroPOKEY[], uint8_t CAMEL[]) {
+    // Calcular el índice de animación para cada monstruo
+
+    int anima1 = (z / 4) % 4;  // Animación para el primer monstruo
+    int anima3 = (u / 3) % 3;  // Animación para el segundo monstruo
+
+    // Dibujar los monstruos en la pantalla
+    LCD_Sprite(z, 150, 21, 24, giroPOKEY, 4, anima1, 0, 1); // Primer monstruo
+    LCD_Sprite(u, 40, 34, 25, CAMEL, 3, anima3, 0, 1);      // Segundo monstruo
+
+    // Incrementar las coordenadas para que los monstruos se muevan
+    z--; // Incremento en X para el primer monstruo
+    u--; // Incremento en X para el segundo monstruo
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -523,7 +554,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	srand(time(NULL));
+	//srand(time(NULL));
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -678,27 +709,165 @@ int main(void)
 					LCD_Bitmap(280, 110, 42,15, MURO);
 
 
-					LCD_Bitmap(5, 5, 22,19, ICONJ1);
+					/*LCD_Bitmap(5, 5, 22,19, ICONJ1);
 					LCD_Bitmap(9, 8, 12,12, LETRAJ1);
 
 					LCD_Bitmap(5, 215, 22,19, ICONJ2);
-					LCD_Bitmap(7, 218, 16,12, LETRAJ2);
+					LCD_Bitmap(7, 218, 16,12, LETRAJ2);*/
 
-					//HEALTH BAR J1
-					FillRect(26, 9, 35, 10, 0x321B);
-					FillRect(61, 9, 35, 10, 0x321B);
-					FillRect(96, 9, 35, 10, 0x321B);
-					FillRect(131, 9, 35, 10, 0x321B);
+					LCD_Bitmap(5, 215, 22,19, ICONJ1);
+					LCD_Bitmap(9, 218, 12,12, LETRAJ1);
+
+					LCD_Bitmap(5, 5, 22,19, ICONJ2);
+					LCD_Bitmap(7, 8, 16,12, LETRAJ2);
+
+
+
 
 					//HEALTH BAR J2
-					FillRect(26, 219, 35, 10, 0xBBE0);
-					FillRect(61, 219, 35, 10, 0xBBE0);
-					FillRect(96, 219, 35, 10, 0xBBE0);
-					FillRect(131, 219, 35, 10, 0xBBE0);
+					FillRect(26, 9, 35, 10, 0xBBE0);
+					FillRect(61, 9, 35, 10, 0xBBE0);
+					FillRect(96, 9, 35, 10, 0xBBE0);
+					FillRect(131, 9, 35, 10, 0xBBE0);
+
+					//HEALTH BAR J2
+					FillRect(26, 219, 35, 10, 0x321B);
+					FillRect(61, 219, 35, 10, 0x321B);
+					FillRect(96, 219, 35, 10, 0x321B);
+					FillRect(131, 219, 35, 10, 0x321B);
 					pintjueg = 0;
 				}
-				uint32_t current_time = HAL_GetTick();
-				int random_number = (rand() % 5) + 1;//Numeros random del 1 al 5
+
+				/*uint32_t current_time = HAL_GetTick();
+				if(current_time - last_time_cactus >= 100){
+					random_number = (rand() % 5) + 1;//Numeros random del 1 al 5
+					last_time_cactus = current_time;
+				}*/
+
+				/*if(selector == 0){
+					if(tiempo < 500){
+						random_number = 0;
+					}
+					if(tiempo > 2000){
+						random_number = random_number + 1;
+						if(random_number >= 14){
+							random_number = 0;
+						}
+					}
+					delay_i = 1000;
+					last_time_i = tiempo;
+					selector = 1;
+				}*/
+				//tiempo++;
+
+				/*if(tiempo >= last_time_i && (selector1 == 0 || selector2 == 0)){
+				}*/
+
+				tiempo1++;
+				tiempo2++;
+
+				if(selector1 == 0 && tiempo1 >= last_time_i){
+					clear_previous_sprite(z, 150, 22, 25);
+					int anima1 = (z / 4) % 4;  // Animación para el primer monstruo
+										// Dibujar los monstruos en la pantalla
+					LCD_Sprite(z, 150, 21, 24, giroPOKEY, 4, anima1, 0, 1); // Primer monstruo
+										// Incrementar las coordenadas para que los monstruos se muevan
+					z--; // Incremento en X para el primer monstruo
+					if (check_collision(sprite_x, sprite_y, z, 150)) {
+						colision2++;
+						boom2 = 1;
+						// Borrar el cactus cuando hay colisión
+						FillRect(z, 150, 22, 25, 0xEDCC);
+						z = 300;
+						FillRect(z, 150, 22, 25, 0xEDCC); // Rellenar con color de fondo
+						selector1 = 1;
+					}
+					if (z == 0){
+						FillRect(z, 150, 22, 25, 0xEDCC); // Reiniciar la posición del enemigo
+						z = 300;
+						selector1 = 1;
+						//tiempo = 0;
+						tiempo1 = 0;
+					}
+				}
+
+				if(selector2 == 0 && tiempo2 >= last_time_i){
+					clear_previous_sprite(u, 30, 22, 25);
+					int anima3 = (u / 4) % 4;  // Animación para el segundo monstruo
+					LCD_Sprite(u, 30, 21, 24, giroPOKEY, 4, anima3, 0, 1);      // Segundo monstruo
+					u--;
+					if(check_collision(sprite_x1, sprite_y1, u, 30)){
+						colision++;
+						boom1 = 1;
+						FillRect(u, 30, 22, 25, 0xEDCC);
+						u = 300;
+						FillRect(u, 30, 22, 25, 0xEDCC);
+						selector2 = 1;
+					}
+					if(u == 0){
+						FillRect(u, 30, 22, 25, 0xEDCC);
+						u = 300;
+						selector2 = 1;
+						tiempo2 = 0;
+					}
+				}
+
+
+				if(selector1 == 1 && tiempo1 >= last_time_i){
+					clear_previous_sprite(z, 180, 34, 25);
+					int anima1 = (z / 3) % 3;  // Animación para el primer monstruo
+					// Dibujar los monstruos en la pantalla
+					LCD_Sprite(z, 180, 34, 25, CAMEL, 3, anima1, 0, 1); // Primer monstruo
+					// Incrementar las coordenadas para que los monstruos se muevan
+					z--; // Incremento en X para el primer monstruo
+					if (check_collision(sprite_x, sprite_y, z, 180)) {
+						colision2++;
+						boom2 = 1;
+						// Borrar el cactus cuando hay colisión
+						FillRect(z, 180, 34, 25, 0xEDCC);
+						z = 300;
+						FillRect(z, 180, 34, 25, 0xEDCC); // Rellenar con color de fondo
+						selector1 = 0;
+					}
+					if (z == 0){
+						FillRect(z, 180, 34, 25, 0xEDCC); // Reiniciar la posición del enemigo
+						z = 300;
+						selector1 = 0;
+						tiempo1 = 0;
+					}
+				}
+
+				if(selector2 == 1 && tiempo2 >= last_time_i){
+					clear_previous_sprite(u, 60, 34, 25);
+					int anima3 = (u / 3) % 3;  // Animación para el segundo monstruo
+					LCD_Sprite(u, 60, 34, 25, CAMEL, 3, anima3, 0, 1);      // Segundo monstruo
+					u--;
+					if(check_collision(sprite_x1, sprite_y1, u, 60)){
+						colision++;
+						boom1 = 1;
+						FillRect(u, 60, 34, 25, 0xEDCC);
+						u = 300;
+						FillRect(u, 60, 34, 25, 0xEDCC);
+						selector2 = 0;
+					}
+					if(u == 0){
+						FillRect(u, 60, 34, 25, 0xEDCC);
+						u = 300;
+						selector2 = 0;
+						tiempo2 = 0;
+					}
+				}
+
+				/*if(tiempo - last_time_i > delay_i && selector == 1){
+					z--; // Decrementa la posición del bicho
+					u--;
+					int anima1 = (z / 4) % 4;
+					int anima3 = (u/3)%3;
+
+					LCD_Sprite(z, 150, 21, 24, giroPOKEY, 4, anima1, 0, 1);
+					LCD_Sprite(u, 40, 34, 25, CAMEL, 3, anima3, 0, 1);
+				}*/
+				//int random_number = (rand() % 5) + 1;//Numeros random del 1 al 5
 				/*for(int x = 0; x < 320 -32; x++){
 					HAL_Delay(15);
 					int anima = (x/35)%3;
@@ -709,54 +878,66 @@ int main(void)
 					int anima1 = (c/2)%2;
 					LCD_Sprite(0, 200, 29, 41, movjug1, 2, anima1, 0, 1);
 				}*/
-				if (random_number == 1  && cactus != 1) {//&& move1 != 1
-					if (current_time - last_time_cactus >= 10) { // Controla la velocidad del bicho
+
+				//enemigos_mov(random_number, &bandera, current_time, last_time_cactus);
+
+
+
+				//Funciona para poner solo dos mountruos en ambos lugares
+				/*if (random_number == 1  && cactus != 1) {//&& move1 != 1
+					random_number = 1;
+					if (current_time - last_time_cactus >= 10) {
+						//activo = 1;
 						last_time_cactus = current_time;
-						clear_previous_sprite(z, 150, 22, 25); //Notas usar tamaño de la planta carnivor no 20 20
-						clear_previous_sprite(u, 30, 22, 25);
-						// Mover cactus hacia la izquierda
-						z--; // Decrementa la posición del bicho
-						u--;
-						int anima = (z / 50) % 1;
-						int anima3 = (u/50)%1;
-						//LCD_Sprite(z, 150, 22, 25, ENEMY, 1, anima1, 0, 1); //Antes 29, 31
-						LCD_Sprite(z, 150, 21, 24, POKEY, 1, anima1, 0, 1);
-						LCD_Sprite(u, 30, 22, 25, ENEMY, 1, anima3, 0, 1);
 
-						//FillRect(z, 150, 20, 20, 0xF800);
+						clear_previous_sprite(u, 40, 34, 25);
+										// Mover camello hacia la izquierda
+										z--; // Decrementa la posición del bicho
+										u--;
+										int anima1 = (z / 4) % 4;
+										int anima3 = (u/3)%3;
+										//LCD_Sprite(z, 150, 22, 25, ENEMY, 1, anima1, 0, 1); //Antes 29, 31
+										LCD_Sprite(z, 150, 21, 24, giroPOKEY, 4, anima1, 0, 1);
+										LCD_Sprite(u, 40, 34, 25, CAMEL, 3, anima3, 0, 1);
 
-						//Colision Jug2
-						if (check_collision(sprite_x, sprite_y, z, 150)) {
-							colision2++;
-							boom2 = 1;
-							// Borrar el cactus cuando hay colisión
-							FillRect(z, 150, 22, 25, 0xEDCC);
-							z = 300;
-						    FillRect(z, 150, 22, 25, 0xEDCC); // Rellenar con color de fondo
-						    //cactus = 1;
-						}
+										//FillRect(z, 150, 20, 20, 0xF800);
 
-						//Colision Jug1
-						if(check_collision(sprite_x1, sprite_y1, u, 30)){
-							colision++;
-							boom1 = 1;
-							FillRect(u, 30, 22, 25, 0xEDCC);
-							u = 300;
-							FillRect(u, 30, 22, 25, 0xEDCC);
+										//Colision Jug2
+										if (check_collision(sprite_x, sprite_y, z, 150)) {
+											colision2++;
+											boom2 = 1;
+											// Borrar el cactus cuando hay colisión
+											FillRect(z, 150, 22, 25, 0xEDCC);
+											z = 300;
+										    FillRect(z, 150, 22, 25, 0xEDCC); // Rellenar con color de fondo
+										    //cactus = 1;
+										}
 
-						}
+										//Colision Jug1
+										if(check_collision(sprite_x1, sprite_y1, u, 30)){
+											colision++;
+											boom1 = 1;
+											FillRect(u, 40, 34, 25, 0xEDCC);
+											u = 300;
+											FillRect(u, 40, 34, 25, 0xEDCC);
 
-						// Si el cactus llega al límite, reiniciar su posición
-						if (z == 0){ //Nota la versión anterior era x <= 10
-							FillRect(z, 150, 22, 25, 0xEDCC); // Reiniciar la posición del enemigo
-						    z = 300;
-						}
-						if(u == 0){
-							FillRect(u, 30, 22, 25, 0xEDCC);
-							u = 300;
-						}
-					}
-				}
+										}
+
+										// Si el cactus llega al límite, reiniciar su posición
+										if (z == 0){ //Nota la versión anterior era x <= 10
+											FillRect(z, 150, 22, 25, 0xEDCC); // Reiniciar la posición del enemigo
+										    z = 300;
+										    //activo = 0;
+										}
+										if(u == 0){
+											FillRect(u, 40, 34, 25, 0xEDCC);
+											u = 300;
+											//activo = 0;
+										}
+									}
+								}*/
+
+				//if(random_number == 5 && )
 
 
 				if(colision == 1){
@@ -803,7 +984,7 @@ int main(void)
 					}
 					LCD_Sprite(sprite_x1, sprite_y1, 34, 37, seleccionJug2, 2, anima2, 0, 1);
 					FillRect(26, 9, 35, 10, 0xEDCC);
-					loser1 = 1;
+					loser2 = 1;
 				}
 
 
@@ -870,7 +1051,7 @@ int main(void)
 					}
 					LCD_Sprite(sprite_x, sprite_y, 34, 37, seleccionJug1, 2, anima1, 0, 1);
 					FillRect(26, 219, 35, 10, 0xEDCC);
-					loser2 = 1;
+					loser1 = 1;
 				}
 
 
@@ -915,10 +1096,16 @@ int main(void)
 					move2 = 0;
 				}
 
+				c++;
+				int anima4 = (c / 2) % 2;
+				LCD_Sprite(sprite_x1, sprite_y1, 34, 37, seleccionJug2, 2, anima4, 0, 1);
 
+				m++;
+				int anima2 = (m / 2) % 2;
+				LCD_Sprite(sprite_x, sprite_y, 34, 37, seleccionJug1, 2, anima2, 0, 1);
 
 				//Movimiento con comandos
-				if(move2 != 1){
+				/*if(move2 != 1){
 					c++;
 					int anima4 = (c / 2) % 2;
 					LCD_Sprite(sprite_x1, sprite_y1, 34, 37, seleccionJug2, 2, anima4, 0, 1);
@@ -927,7 +1114,7 @@ int main(void)
 					m++;
 					int anima2 = (m / 2) % 2;
 					LCD_Sprite(sprite_x, sprite_y, 34, 37, seleccionJug1, 2, anima2, 0, 1);
-				}
+				}*/
 				if(c == 20){
 					c = 0;
 				}else if(m == 20){
@@ -1030,6 +1217,8 @@ int main(void)
 					LCD_Bitmap(75, 85, 173, 119, podio);
 					LCD_Bitmap(115, 10, 96, 84, trofeo);
 					LCD_Bitmap(25, 205, 274, 25, aviso1);
+					loser2 = 0;
+					inicio = 3;
 				}
 				if(loser1 == 1){
 					//Podio ganador
@@ -1037,8 +1226,10 @@ int main(void)
 					LCD_Bitmap(75, 85, 173, 119, podio);
 					LCD_Bitmap(115, 10, 96, 84, trofeo);
 					LCD_Bitmap(25, 205, 274, 25, aviso2);
+					loser1 = 0;
+					inicio = 3;
 				}
-				if(received_char == 'c'){
+				if(received_char == 'a'){
 					start = 1;
 				}
 				break;
@@ -1350,6 +1541,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 	if(huart->Instance == USART2){
 		HAL_UART_Receive_DMA(&huart2, data, 1);
+		//received_char2 = data2[0];
 		received_char = data[0];
 	}
 
