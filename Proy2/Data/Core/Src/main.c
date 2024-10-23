@@ -52,10 +52,8 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
-DMA_HandleTypeDef hdma_uart5_rx;
 DMA_HandleTypeDef hdma_usart2_rx;
 DMA_HandleTypeDef hdma_usart3_rx;
-DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
 //extern uint8_t FONDOINICIO[];
@@ -119,7 +117,7 @@ extern uint8_t aviso1[];
 extern uint8_t aviso2[];
 
 
-uint8_t musica[]; //Buffer para la musica vía DMA envio
+uint8_t musica[0]; //Buffer para la musica vía DMA envio
 uint8_t data[];
 uint8_t data2[];
 
@@ -242,8 +240,12 @@ FIL fil;
 FRESULT fres;
 DWORD fre_clust;
 uint32_t totalSpace, freeSpace;
-char buffer[10640]; //Buffer para leer 10640 caracteres de personaje1.txt
+char buffer[16000]; //Buffer para leer 10640 caracteres de personaje1.txt
 uint8_t leer;
+
+#define IMAGE_SIZE 16000 // Ajusta el tamaño
+
+uint8_t image[IMAGE_SIZE];  // Variable para almacenar los datos de la imagen
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -255,11 +257,39 @@ static void MX_USART3_UART_Init(void);
 static void MX_UART5_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+void transmit_uart(char *string);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+int load_image_from_sd_to_play(const char* filename) {
+    FIL fil;
+    UINT bytes_read;
+    FRESULT fres;
+
+    // Abrir el archivo desde la SD
+    fres = f_open(&fil, filename, FA_READ);
+    if (fres != FR_OK) {
+      //  transmit_uart("Error al abrir el archivo en la SD\n");
+        return 0;  // Error al abrir el archivo
+    }
+
+    // Leer los datos del archivo y almacenarlos en la variable play
+    fres = f_read(&fil, image, IMAGE_SIZE, &bytes_read);
+    if (fres != FR_OK || bytes_read == 0) {
+      //  transmit_uart("Error al leer la imagen desde la SD\n");
+        f_close(&fil);
+        return 0;  // Error al leer el archivo
+    }
+
+    // Cerrar el archivo
+    f_close(&fil);
+   // transmit_uart("Imagen cargada correctamente desde la SD a la variable play\n");
+    return 1;  // Éxito
+}
+
+
 // Función para actualizar los selectores en la pantalla.
 void actualizar_selectores() {
     // Limpiar la pantalla
@@ -335,42 +365,41 @@ void mover_colores(char comando) {
     actualizar_selectores();
 }
 
-
 void dibujar_puntero(uint8_t y_coord) {
-    // Esta función dibuja el puntero en la posición `y_coord` en la pantalla.
-    LCD_Bitmap(80, y_coord, 14, 15, PUNTERO);  // Dibuja el puntero en la nueva coordenada Y
+    // Dibuja el puntero en la posición `y_coord` en la pantalla.
+    LCD_Bitmap(80, y_coord, 14, 15, PUNTERO);
 }
 
 void borrar_puntero(uint8_t y_coord) {
-    // Esta función borra el puntero en la posición `y_coord` de la pantalla.
-    FillRect(80, y_coord, 14, 15, 0x2817);  // Borra el puntero en la coordenada Y
+    // Borra el puntero en la posición `y_coord` de la pantalla.
+    FillRect(80, y_coord, 14, 15, 0x2817);
 }
 
 // Función para mover el puntero hacia arriba
 void mover_puntero_arriba(void) {
-    if (seleccion_actual > 1) {
-        // Borrar puntero en la posición actual
-        borrar_puntero(seleccion_actual == 2 ? OPCION2_Y : OPCION3_Y);
+    if (seleccion_actual == 2) {
+        // Borrar el puntero en la posición actual (segunda opción)
+        borrar_puntero(OPCION2_Y);
 
-        // Cambiar a la opción anterior
-        seleccion_actual--;
+        // Cambiar a la primera opción
+        seleccion_actual = 1;
 
-        // Dibujar el puntero en la nueva posición
-        dibujar_puntero(seleccion_actual == 1 ? OPCION1_Y : OPCION2_Y);
+        // Dibujar el puntero en la nueva posición (primera opción)
+        dibujar_puntero(OPCION1_Y);
     }
 }
 
 // Función para mover el puntero hacia abajo
 void mover_puntero_abajo(void) {
-    if (seleccion_actual < 3) {
-        // Borrar puntero en la posición actual
-        borrar_puntero(seleccion_actual == 1 ? OPCION1_Y : OPCION2_Y);
+    if (seleccion_actual == 1) {
+        // Borrar el puntero en la posición actual (primera opción)
+        borrar_puntero(OPCION1_Y);
 
-        // Cambiar a la siguiente opción
-        seleccion_actual++;
+        // Cambiar a la segunda opción
+        seleccion_actual = 2;
 
-        // Dibujar el puntero en la nueva posición
-        dibujar_puntero(seleccion_actual == 2 ? OPCION2_Y : OPCION3_Y);
+        // Dibujar el puntero en la nueva posición (segunda opción)
+        dibujar_puntero(OPCION2_Y);
     }
 }
 
@@ -381,8 +410,6 @@ int check_collision(int jug_x, int jug_y, int green_x, int green_y) {
             jug_y < green_y + green_rect_height &&
             jug_y + jug_height > green_y);
 }
-
-
 
 void clear_previous_sprite(int x, int y, int width, int height) {
     // Limpia la posición anterior del sprite dibujando un rectángulo blanco
@@ -481,68 +508,10 @@ void move_sprite_down1() {
 
 
 //Función para leer de la SD
-void leer_archivo() {
-    UINT bytes_leidos;   // Almacena el número de bytes leídos
-    int i = 0;           // �?ndice para el buffer global
-
-    // Montar la tarjeta SD
-    fres = f_mount(&fs, "/", 0);
-    if (fres != FR_OK) {
-        // Error al montar la tarjeta SD
-        return;
-    }
-
-    // Abrir el archivo para lectura
-    fres = f_open(&fil, "personaje1.txt", FA_READ);
-    if (fres != FR_OK) {
-        // Error al abrir el archivo
-        return;
-    }
-
-    // Bucle para leer todo el archivo en bloques y almacenarlo en el buffer
-    while (i < 10640) {
-        char temp_buffer[512];  // Leer en bloques de 512 bytes
-
-        // Leer un bloque de datos
-        fres = f_read(&fil, temp_buffer, sizeof(temp_buffer), &bytes_leidos);
-
-        // Si hubo error o no se leyeron bytes, terminar
-        if (fres != FR_OK || bytes_leidos == 0) {
-            break;
-        }
-
-        // Copiar los datos leídos al buffer
-        for (int j = 0; j < bytes_leidos; j++) {
-            if (i < 10640) {
-                buffer[i++] = temp_buffer[j];
-            } else {
-                break; // Si se llena el buffer, salir
-            }
-        }
-    }
-
-    // Cerrar el archivo
-    f_close(&fil);
-
-    // Desmontar la tarjeta SD
-    f_mount(NULL, "", 1);
-}
 
 
-void mostrarMonstruos(uint8_t giroPOKEY[], uint8_t CAMEL[]) {
-    // Calcular el índice de animación para cada monstruo
 
-    int anima1 = (z / 4) % 4;  // Animación para el primer monstruo
-    int anima3 = (u / 3) % 3;  // Animación para el segundo monstruo
 
-    // Dibujar los monstruos en la pantalla
-    LCD_Sprite(z, 150, 21, 24, giroPOKEY, 4, anima1, 0, 1); // Primer monstruo
-    LCD_Sprite(u, 40, 34, 25, CAMEL, 3, anima3, 0, 1);      // Segundo monstruo
-
-    // Incrementar las coordenadas para que los monstruos se muevan
-    z--; // Incremento en X para el primer monstruo
-    u--; // Incremento en X para el segundo monstruo
-}
 
 /* USER CODE END 0 */
 
@@ -582,6 +551,7 @@ int main(void)
   MX_UART5_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+
   	//HAL_UART_Transmit_DMA(&huart3, musica, sizeof(musica)); //Envia los datos del buffer musica via RX en DMA
     HAL_UART_Receive_DMA(&huart3, data, 1); //Recibir comandos via uart en DMA
     HAL_UART_Receive_DMA(&huart5, data2, 1);
@@ -589,6 +559,15 @@ int main(void)
   	//HAL_UART_Receive_IT(&huart3, data, 1);
 	LCD_Init();
 
+	void transmit_uart(char *string){
+		  uint8_t len = strlen(string);
+		  HAL_UART_Transmit(&huart5, (uint8_t*) string, len, 200); //200
+	}
+
+	void transmit_uart2(char *string){
+			  uint8_t len = strlen(string);
+			  HAL_UART_Transmit(&huart3, (uint8_t*) string, len, 200); //200
+	}
 
 	//leer_archivo();
 
@@ -599,7 +578,7 @@ int main(void)
 	}else if(fres != FR_OK){
 		//LCD_Print("Micro SD card's mount error!", 20, 100, 1, 0x001F, 0xCAB9);
 	}
-	fres = f_open(&fil, "personaje1.txt", FA_READ);
+	fres = f_open(&fil, "change1.txt", FA_READ);
 	if(fres == FR_OK){
 		//LCD_Print("File opened for reading.", 20, 100, 1, 0x001F, 0xCAB9);
 		leer = 1;
@@ -620,7 +599,159 @@ int main(void)
 		//LCD_Print("The file was not closed", 30, 150, 1, 0x001F, 0xCAB9);
 	}
 	f_mount(NULL,"",1);
-	memset(buffer, '\0', 100); //Limpia el buffer*/
+	LCD_Bitmap(10, 60, 35, 38, buffer);
+	memset(buffer, '\0', 16000);*/
+
+	uint8_t imageBuffer[8000];
+
+
+	/*fres = f_mount(&fs, "/", 0);
+	if (fres == FR_OK) {
+	    // Montaje correcto de la tarjeta SD
+	} else {
+	    // Error al montar la tarjeta SD
+	}
+
+	fres = f_open(&fil, "change1.txt", FA_READ);
+	if (fres == FR_OK) {
+	    // Archivo abierto correctamente para lectura
+	    leer = 1;
+	} else {
+	    // Error al abrir el archivo
+	    leer = 0;
+	}
+
+	if (leer == 1) {
+	    char buffer[16000];  // Buffer para leer datos del archivo
+	    char temp[5];        // Para almacenar temporalmente cada "0xXX"
+	    int index = 0;       // �?ndice para guardar el valor en el buffer binario
+	    uint8_t imageBuffer[16000]; // Buffer de imagen en formato binario
+	    UINT bytesLeidos;
+
+	    while (f_gets(buffer, sizeof(buffer), &fil)) {
+	        char *ptr = buffer;
+	        while (*ptr != '\0') {
+	            if (*ptr == '0' && *(ptr + 1) == 'x') {
+	                // Extrae los dos caracteres después de "0x"
+	                temp[0] = *(ptr + 2);
+	                temp[1] = *(ptr + 3);
+	                temp[2] = '\0';
+
+	                // Convierte la cadena "XX" en un valor hexadecimal
+	                uint8_t value = (uint8_t)strtol(temp, NULL, 16);
+	                imageBuffer[index++] = value;
+
+	                // Aumenta el puntero para saltar los "0xXX"
+	                ptr += 4;
+	            } else {
+	                // Avanza el puntero para ignorar comas, espacios u otros caracteres
+	                ptr++;
+	            }
+	        }
+	    }
+	    leer = 0;
+	}
+
+	fres = f_close(&fil);
+	if (fres == FR_OK) {
+	    // Archivo cerrado correctamente
+	} else {
+	    // Error al cerrar el archivo
+	}
+
+	f_mount(NULL, "", 1);*/
+
+
+	/*fres = f_mount(&fs, "/", 0);
+	if (fres == FR_OK) {
+	    // Tarjeta SD montada correctamente
+	} else {
+	    // Error al montar la tarjeta SD
+	}
+
+	fres = f_open(&fil, "change1.txt", FA_READ);
+	if (fres == FR_OK) {
+	    // Archivo abierto correctamente
+	    leer = 1;
+	} else {
+	    // Error al abrir el archivo
+	    leer = 0;
+	}
+
+	if (leer == 1) {
+	    char buffer[16000];  // Buffer para leer datos del archivo
+	    char temp[5];        // Buffer temporal para almacenar cada "0xXXXX"
+	    int index = 0;       // �?ndice para guardar el valor en el buffer binario
+	    uint16_t imageBuffer[8000]; // Buffer de imagen en formato binario RGB565 (16 bits por píxel)
+	    UINT bytesLeidos;
+	    int dataCount = 0;   // Contador de datos procesados
+
+	    // Limpiar buffers antes de usar
+	    memset(buffer, 0, sizeof(buffer));
+	    memset(imageBuffer, 0, sizeof(imageBuffer));
+
+	    while (f_gets(buffer, sizeof(buffer), &fil)) {
+	        char *ptr = buffer;
+	        while (*ptr != '\0') {
+	            if (*ptr == '0' && *(ptr + 1) == 'x') {
+	                // Extrae los 4 caracteres después de "0x"
+	                temp[0] = *(ptr + 2);
+	                temp[1] = *(ptr + 3);
+	                temp[2] = *(ptr + 4);
+	                temp[3] = *(ptr + 5);
+	                temp[4] = '\0';
+
+	                // Convierte la cadena "XXXX" en un valor hexadecimal de 16 bits
+	                uint16_t colorValue = (uint16_t)strtol(temp, NULL, 16);
+
+	                // Guardar el valor en el buffer de la imagen
+	                imageBuffer[index++] = colorValue;
+	                dataCount++;  // Contar el número de valores leídos
+
+	                // Avanza el puntero para saltar los "0xXXXX"
+	                ptr += 6;
+	            } else {
+	                // Ignorar otros caracteres (coma, espacios, etc.)
+	                ptr++;
+	            }
+
+	            // Evitar sobrepasar el tamaño del buffer
+	            if (index >= sizeof(imageBuffer) / sizeof(imageBuffer[0])) {
+	                break;
+	            }
+	        }
+
+	        // Verificar si alcanzamos el tamaño esperado de la imagen
+	        if (index >= sizeof(imageBuffer) / sizeof(imageBuffer[0])) {
+	            break;
+	        }
+	    }
+
+	    // Verificar que se leyeron suficientes datos
+	    if (dataCount < 8000) {
+	        // Error: no se leyeron suficientes datos
+	        // Aquí puedes imprimir un mensaje de error en tu LCD o serie
+	        // LCD_Print("Error: No se leyeron suficientes datos.", 10, 150, 1, 0xF800, 0xFFFF);
+	    } else {
+	        // Datos suficientes leídos
+	    }
+
+	    leer = 0;
+	}
+
+	fres = f_close(&fil);
+	if (fres == FR_OK) {
+	    // Archivo cerrado correctamente
+	} else {
+	    // Error al cerrar el archivo
+	}
+
+	f_mount(NULL, "", 1);*/
+
+	// Muestra la imagen desde el buffer de imagen binario
+	// Ajusta las dimensiones según el tamaño de tu imagen (ejemplo 160x100)
+
+
 
 	LCD_Clear(0xEE93);
 
@@ -628,20 +759,12 @@ int main(void)
 	LCD_Bitmap(45, 105, 234, 45, DESERT);
 	LCD_Bitmap(15, 200, 201, 22, LOGONINTENDO);
 
-
-
-	/*FillRect(0, 0, 319, 239, 0xFFFF);
-	FillRect(50, 60, 20, 20, 0xF800);
-	FillRect(70, 60, 20, 20, 0x07E0);*/
-	//LCD_Bitmap(0, 0, 320, 240, FONDOINICIO);
+	//Funciona activar musica
+	//transmit_uart('1');
 
 
 
-	//LCD_Sprite(sprite_x, sprite_y, sprite_width, sprite_height, movjug1, 2, anima1, 0, 1);
 
-	//FillRect(0, 0, 319, 206, 0x1911);
-
-	 //LCD_Print("Hola Mundo", 20, 100, 1, 0x001F, 0xCAB9);
 
   /* USER CODE END 2 */
 
@@ -649,16 +772,17 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1) {
 
-		if(received_char == 'i' && unico == 1){
+		if(received_char == 'a' && unico == 1){
 			start = 1;
 			unico = 0;
+			received_char = 'o';
 		}
 		if(start == 1){
 			LCD_Clear(0x2817);
 			LCD_Bitmap(53, 25, 214, 85, LOGOEX);
 			LCD_Bitmap(110, 130, 98, 12, OPCION1);
 			LCD_Bitmap(110, 162, 142, 13, OPCION2);
-			LCD_Bitmap(110, 195, 84, 11, OPCION3);
+			//LCD_Bitmap(110, 195, 84, 11, OPCION3);
 			LCD_Bitmap(80, 130, 14, 15, PUNTERO);
 			start = 0;
 			inicio = 3;
@@ -668,9 +792,11 @@ int main(void)
 			//HAL_Delay(200);
 			if(received_char == 'd'){
 				mover_puntero_arriba();
+				received_char = 'o';
 			}
 			else if(received_char == 'c'){
 				mover_puntero_abajo();
+				received_char = 'o';
 			}
 
 			new_command == received_char;
@@ -680,21 +806,24 @@ int main(void)
 			inicio = 0;
 			seleccion_actual = 0;
 			pintjueg = 1;
+			received_char = 'o';
 		}
 		if(received_char == 'a' && seleccion_actual == 2){
 			inicio = 1;
 			seleccion_actual = 0;
 			pintjueg = 1;
+			received_char = 'o';
 		}
 		if(received_char == 'a' && seleccion_actual == 3){
 			inicio = 2;
 			seleccion_actual = 0;
 			pintjueg = 1;
+			received_char = 'o';
 		}
 
 		switch (inicio){
 			case 0:
-
+				transmit_uart('1');
 				if(pintjueg == 1){
 					LCD_Clear(0xEDCC);
 
@@ -736,7 +865,12 @@ int main(void)
 					FillRect(96, 219, 35, 10, 0x321B);
 					FillRect(131, 219, 35, 10, 0x321B);
 					pintjueg = 0;
+
 				}
+
+				//musica[0] = 'b';
+
+
 
 				/*uint32_t current_time = HAL_GetTick();
 				if(current_time - last_time_cactus >= 100){
@@ -767,23 +901,26 @@ int main(void)
 				tiempo2++;
 
 				if(selector1 == 0 && tiempo1 >= last_time_i){
-					clear_previous_sprite(z, 150, 22, 25);
+					clear_previous_sprite(z, 130, 22, 25);
 					int anima1 = (z / 4) % 4;  // Animación para el primer monstruo
 										// Dibujar los monstruos en la pantalla
-					LCD_Sprite(z, 150, 21, 24, giroPOKEY, 4, anima1, 0, 1); // Primer monstruo
+					LCD_Sprite(z, 130, 21, 24, giroPOKEY, 4, anima1, 0, 1); // Primer monstruo
 										// Incrementar las coordenadas para que los monstruos se muevan
 					z--; // Incremento en X para el primer monstruo
 					if (check_collision(sprite_x, sprite_y, z, 150)) {
 						colision2++;
 						boom2 = 1;
 						// Borrar el cactus cuando hay colisión
-						FillRect(z, 150, 22, 25, 0xEDCC);
+						FillRect(z, 130, 22, 25, 0xEDCC);
 						z = 300;
-						FillRect(z, 150, 22, 25, 0xEDCC); // Rellenar con color de fondo
+						FillRect(z, 130, 22, 25, 0xEDCC); // Rellenar con color de fondo
 						selector1 = 1;
+						//musica[0] = 'c';
+						transmit_uart('3');
+						transmit_uart2("1");
 					}
 					if (z == 0){
-						FillRect(z, 150, 22, 25, 0xEDCC); // Reiniciar la posición del enemigo
+						FillRect(z, 130, 22, 25, 0xEDCC); // Reiniciar la posición del enemigo
 						z = 300;
 						selector1 = 1;
 						//tiempo = 0;
@@ -803,6 +940,9 @@ int main(void)
 						u = 300;
 						FillRect(u, 30, 22, 25, 0xEDCC);
 						selector2 = 1;
+						//musica[0] = 'c';
+						transmit_uart('3');
+						transmit_uart2("1");
 					}
 					if(u == 0){
 						FillRect(u, 30, 22, 25, 0xEDCC);
@@ -814,7 +954,7 @@ int main(void)
 
 
 				if(selector1 == 1 && tiempo1 >= last_time_i){
-					clear_previous_sprite(z, 180, 34, 25);
+					clear_previous_sprite(z, 180, 35, 25);
 					int anima1 = (z / 3) % 3;  // Animación para el primer monstruo
 					// Dibujar los monstruos en la pantalla
 					LCD_Sprite(z, 180, 34, 25, CAMEL, 3, anima1, 0, 1); // Primer monstruo
@@ -828,6 +968,9 @@ int main(void)
 						z = 300;
 						FillRect(z, 180, 34, 25, 0xEDCC); // Rellenar con color de fondo
 						selector1 = 0;
+						//musica[0] = 'c';
+						transmit_uart('3');
+						transmit_uart2("1");
 					}
 					if (z == 0){
 						FillRect(z, 180, 34, 25, 0xEDCC); // Reiniciar la posición del enemigo
@@ -838,20 +981,23 @@ int main(void)
 				}
 
 				if(selector2 == 1 && tiempo2 >= last_time_i){
-					clear_previous_sprite(u, 60, 34, 25);
+					clear_previous_sprite(u, 80, 35, 25);
 					int anima3 = (u / 3) % 3;  // Animación para el segundo monstruo
-					LCD_Sprite(u, 60, 34, 25, CAMEL, 3, anima3, 0, 1);      // Segundo monstruo
+					LCD_Sprite(u, 80, 34, 25, CAMEL, 3, anima3, 0, 1);      // Segundo monstruo
 					u--;
-					if(check_collision(sprite_x1, sprite_y1, u, 60)){
+					if(check_collision(sprite_x1, sprite_y1, u, 70)){
 						colision++;
 						boom1 = 1;
-						FillRect(u, 60, 34, 25, 0xEDCC);
+						FillRect(u, 80, 34, 25, 0xEDCC);
 						u = 300;
-						FillRect(u, 60, 34, 25, 0xEDCC);
+						FillRect(u, 80, 34, 25, 0xEDCC);
 						selector2 = 0;
+						//musica[0] = 'c';
+						transmit_uart('3');
+						transmit_uart2("1");
 					}
 					if(u == 0){
-						FillRect(u, 60, 34, 25, 0xEDCC);
+						FillRect(u, 80, 34, 25, 0xEDCC);
 						u = 300;
 						selector2 = 0;
 						tiempo2 = 0;
@@ -1070,42 +1216,44 @@ int main(void)
 				if (received_char == 'g') {
 					//move_blue_cube_up();  // Mover cubo azul hacia arriba
 					//move_jug1_up();
-					move_sprite_up1();
+					move_sprite_up();
 					received_char = 0;  // Resetear el comando
 					move1 = 0;
 				}
 				if (received_char == 'h') {
 					//move_blue_cube_down();  // Mover cubo azul hacia abajo
 					//move_jug1_down();
-					move_sprite_down1();
+					move_sprite_down();
 					received_char = 0;  // Resetear el comando
 					move1 = 0;
 				}
 
-				//Movimiento Jug1
-				if (received_char2 == 'g') {
+				//Movimiento Jug2
+				if (received_char2 == 'i') {
 					//move_green_cube_left();  // Mover cubo verde hacia la izquierda
-					move_sprite_up();
+					move_sprite_up1();
+
 					received_char2 = 0;  // Resetear el comando
 					move2 = 0;
 				}
-				if(received_char2 == 'h'){
+				if(received_char2 == 'j'){
 					//move_green_cube_right();
-					move_sprite_down();
+					move_sprite_down1();
+
 					received_char2 = 0;
 					move2 = 0;
 				}
 
-				c++;
+				/*c++;
 				int anima4 = (c / 2) % 2;
 				LCD_Sprite(sprite_x1, sprite_y1, 34, 37, seleccionJug2, 2, anima4, 0, 1);
 
 				m++;
 				int anima2 = (m / 2) % 2;
-				LCD_Sprite(sprite_x, sprite_y, 34, 37, seleccionJug1, 2, anima2, 0, 1);
+				LCD_Sprite(sprite_x, sprite_y, 34, 37, seleccionJug1, 2, anima2, 0, 1);*/
 
 				//Movimiento con comandos
-				/*if(move2 != 1){
+				if(move2 != 1){
 					c++;
 					int anima4 = (c / 2) % 2;
 					LCD_Sprite(sprite_x1, sprite_y1, 34, 37, seleccionJug2, 2, anima4, 0, 1);
@@ -1114,7 +1262,7 @@ int main(void)
 					m++;
 					int anima2 = (m / 2) % 2;
 					LCD_Sprite(sprite_x, sprite_y, 34, 37, seleccionJug1, 2, anima2, 0, 1);
-				}*/
+				}
 				if(c == 20){
 					c = 0;
 				}else if(m == 20){
@@ -1124,6 +1272,8 @@ int main(void)
 			case 1:
 				if(pintjueg == 1){
 					LCD_Clear(0x00A7);
+
+
 					//             *       *
 
 					LCD_Bitmap(25, 80, 63, 69, SELECTOROFF);
@@ -1131,7 +1281,7 @@ int main(void)
 					//LCD_Bitmap(40, 90, 35, 38, buffer);
 					LCD_Bitmap(40, 90, 35, 38, personaje1);
 
-					memset(buffer, '\0', 100); //Limpia el buffer
+					//memset(buffer, '\0', 100); //Limpia el buffer
 
 					LCD_Bitmap(95, 80, 63, 69, SELECTOROFF);
 					LCD_Bitmap(110, 90, 35, 38, personaje2);
@@ -1157,6 +1307,9 @@ int main(void)
 					LCD_Bitmap(235, 131, 63, 17, SELECTORONJ2);
 
 					LCD_Bitmap(60, 175, 200, 12, AVISOJUGADOR);
+
+
+
 					pintjueg = 0;
 				}
 				if(received_char != new_command){
@@ -1164,7 +1317,7 @@ int main(void)
 					new_command = received_char;
 				}
 				// Dependiendo de la posición del selector, se asigna la animación correspondiente
-				if(received_char == 'i'){
+				if(received_char == 'a'){
 					if (selector1_pos == 1) {
 						seleccionJug1 = movjug1;
 						caida1 = colisionjug1;
@@ -1193,10 +1346,12 @@ int main(void)
 						caida2 = colisionjug4;
 					}
 					start = 1;
+					received_char = 'o';
 				}
 				if(received_char == 'c'){
 					start = 1;
 					inicio = 5;
+					received_char = 'o';
 				}
 
 				//Implementar lectura boton 'b' regreso a menu , start = 1, logica seria mover selectores JUG1 y JUG2 guardar selecciones para imprimir en juego
@@ -1218,7 +1373,7 @@ int main(void)
 					LCD_Bitmap(115, 10, 96, 84, trofeo);
 					LCD_Bitmap(25, 205, 274, 25, aviso1);
 					loser2 = 0;
-					inicio = 3;
+					//inicio = 3;
 				}
 				if(loser1 == 1){
 					//Podio ganador
@@ -1227,11 +1382,14 @@ int main(void)
 					LCD_Bitmap(115, 10, 96, 84, trofeo);
 					LCD_Bitmap(25, 205, 274, 25, aviso2);
 					loser1 = 0;
-					inicio = 3;
+					//inicio = 3;
 				}
-				if(received_char == 'a'){
+				if(received_char == 'c'){
 					start = 1;
+					inicio = 5;
+					received_char = 'o';
 				}
+
 				break;
 			default:
 				break;
@@ -1350,7 +1508,7 @@ static void MX_UART5_Init(void)
   huart5.Init.WordLength = UART_WORDLENGTH_8B;
   huart5.Init.StopBits = UART_STOPBITS_1;
   huart5.Init.Parity = UART_PARITY_NONE;
-  huart5.Init.Mode = UART_MODE_RX;
+  huart5.Init.Mode = UART_MODE_TX_RX;
   huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart5.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart5) != HAL_OK)
@@ -1439,15 +1597,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
-  /* DMA1_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
   /* DMA1_Stream1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
-  /* DMA1_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
   /* DMA1_Stream5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
@@ -1523,11 +1675,14 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 
 	//HAL_UART_Receive_IT(&huart3, data, 1);
 	if(huart->Instance == USART3){
+
 		HAL_UART_Receive_DMA(&huart3, data, 1);
 		received_char = data[0];
 		move1 = 1;
@@ -1544,6 +1699,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		//received_char2 = data2[0];
 		received_char = data[0];
 	}
+
+
 
 
 }
