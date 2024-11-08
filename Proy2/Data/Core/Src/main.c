@@ -52,6 +52,7 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_uart5_rx;
 DMA_HandleTypeDef hdma_usart2_rx;
 DMA_HandleTypeDef hdma_usart3_rx;
 
@@ -823,7 +824,7 @@ int main(void)
 
 		switch (inicio){
 			case 0:
-				transmit_uart('1');
+				//transmit_uart('1');
 				if(pintjueg == 1){
 					LCD_Clear(0xEDCC);
 
@@ -890,8 +891,8 @@ int main(void)
 						FillRect(z, 130, 22, 25, 0xEDCC); // Rellenar con color de fondo
 						selector1 = 1;
 						//musica[0] = 'c';
-						transmit_uart('3');
-						transmit_uart2("1");
+						//transmit_uart('3');
+						//transmit_uart2("1");
 					}
 					if (z == 0){
 						FillRect(z, 130, 22, 25, 0xEDCC); // Reiniciar la posición del enemigo
@@ -915,8 +916,8 @@ int main(void)
 						FillRect(u, 30, 22, 25, 0xEDCC);
 						selector2 = 1;
 						//musica[0] = 'c';
-						transmit_uart('3');
-						transmit_uart2("1");
+						//transmit_uart('3');
+						//transmit_uart2("1");
 					}
 					if(u == 0){
 						FillRect(u, 30, 22, 25, 0xEDCC);
@@ -943,8 +944,8 @@ int main(void)
 						FillRect(z, 180, 34, 25, 0xEDCC); // Rellenar con color de fondo
 						selector1 = 0;
 						//musica[0] = 'c';
-						transmit_uart('3');
-						transmit_uart2("1");
+						//transmit_uart('3');
+						//transmit_uart2("1");
 					}
 					if (z == 0){
 						FillRect(z, 180, 34, 25, 0xEDCC); // Reiniciar la posición del enemigo
@@ -967,8 +968,8 @@ int main(void)
 						FillRect(u, 80, 34, 25, 0xEDCC);
 						selector2 = 0;
 						//musica[0] = 'c';
-						transmit_uart('3');
-						transmit_uart2("1");
+						//transmit_uart('3');
+						//transmit_uart2("1");
 					}
 					if(u == 0){
 						FillRect(u, 80, 34, 25, 0xEDCC);
@@ -1490,6 +1491,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
   /* DMA1_Stream1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
